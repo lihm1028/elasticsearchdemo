@@ -3,6 +3,7 @@ package com.example.esdemo.service.impl.term;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.Date;
 
 @Data
@@ -18,7 +19,7 @@ public class BookTerm implements Serializable {
     /**
      * 编号
      */
-    private String code;
+    private Collection<String> codes;
 
     /**
      * 邮箱
@@ -31,9 +32,18 @@ public class BookTerm implements Serializable {
     private String author;
 
     private Date startTime;
-
-
     private Date endTime;
+
+
+    /**
+     * 价格
+     */
+    private Integer startPrice;
+
+    /**
+     * 价格
+     */
+    private Integer endPrice;
 
 
 }

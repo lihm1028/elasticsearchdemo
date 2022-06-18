@@ -28,6 +28,11 @@ public interface BookService {
      */
     Page<BookIndex> search(BookTerm term, Pageable pageable);
 
+
+    Page<BookIndex> search2(BookTerm term, Pageable pageable);
+
+    Page<BookIndex> search3(BookTerm term, Pageable pageable);
+
     BookIndex findByCode(String code);
 
     boolean deleteById(String id);
