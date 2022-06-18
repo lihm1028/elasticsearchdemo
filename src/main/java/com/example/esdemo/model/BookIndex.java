@@ -10,7 +10,7 @@ import java.io.Serializable;
 import java.util.Date;
 
 @Data
-@Document(indexName = "book",createIndex = true)
+@Document(indexName = "book", createIndex = true, shards = 5)
 public class BookIndex implements Serializable {
 
 
@@ -18,11 +18,17 @@ public class BookIndex implements Serializable {
      * 主键
      */
     @Id
-    @Field(type = FieldType.Text)
+    @Field(type = FieldType.Keyword)
     private String id;
 
-    @Field(type = FieldType.Keyword)
-    private String keyword;
+
+    /**
+     *  Keyword 代表不分词
+     *  Text 代表分词
+     *
+     */
+    @Field(type = FieldType.Text)
+    private String title;
 
 
     /**
@@ -34,16 +40,26 @@ public class BookIndex implements Serializable {
     /**
      * 编号
      */
+    @Field(type = FieldType.Keyword)
     private String code;
 
     /**
      * 邮箱
      */
-    @Field(type = FieldType.Text)
     private String email;
 
     /**
      * 作者
+     * 不指定FieldType默认生成
+     *   "author":{
+     *                     "type":"text",
+     *                     "fields":{
+     *                         "keyword":{
+     *                             "type":"keyword",
+     *                             "ignore_above":256
+     *                         }
+     *                     }
+     *                 }
      */
     private String author;
 
@@ -63,6 +79,13 @@ public class BookIndex implements Serializable {
      */
     private Date createTime;
 
+
+    /**
+     * 更新时间戳
+     */
+    @Field(type = FieldType.Long)
+    private Long updateTime = System.currentTimeMillis();
+
     public BookIndex() {
     }
 
@@ -70,12 +93,13 @@ public class BookIndex implements Serializable {
     public String toString() {
         return "BookIndex{" +
                 "id='" + id + '\'' +
-                ", keyword='" + keyword + '\'' +
+                ", title='" + title + '\'' +
                 ", name='" + name + '\'' +
                 ", code='" + code + '\'' +
                 ", email='" + email + '\'' +
                 ", author='" + author + '\'' +
                 ", date=" + date +
+                ", price=" + price +
                 ", createTime=" + createTime +
                 '}';
     }

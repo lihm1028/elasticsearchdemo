@@ -38,4 +38,7 @@ public interface BookService {
     boolean deleteById(String id);
 
 
+    boolean removeAll();
+
+
 }

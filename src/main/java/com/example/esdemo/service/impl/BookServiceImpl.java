@@ -60,27 +60,67 @@ public class BookServiceImpl implements BookService {
     public Page<BookIndex> search(BookTerm term, Pageable pageable) {
 
 
-        NativeSearchQueryBuilder searchQuery = new NativeSearchQueryBuilder();
-
-
         BoolQueryBuilder bool = QueryBuilders.boolQuery();
 
         if (StringUtils.isNotBlank(term.getKeyword())) {
-            bool.must(QueryBuilders.queryStringQuery(term.getKeyword()).defaultField("name"));
+            /**
+             * 查询title字段中，会将输入keyword拆词
+             * 相当于把"道德老子1"分词了，再查询；
+             * 不指定feild，查询范围为所有feild
+             *
+             * 指定多个queryStringQuery("道德").field().field()
+             */
+            bool.must(QueryBuilders.queryStringQuery(term.getKeyword()).defaultField("title"));
+
 //            bool.must(QueryBuilders.queryStringQuery(term.getKeyword())
 //                    .field("name", 1.0F)
 //                    .field("code", 1.0F));
+
+
+            //termQuery精确查询
+//            bool.must(QueryBuilders.termQuery("title", term.getKeyword()));
+
+
+            // 关键字支持分词
+//            bool.must(QueryBuilders.matchQuery("title", term.getKeyword()));
+
+            // 关键字支持分词 匹配多个字段
+//            bool.must(QueryBuilders.multiMatchQuery(term.getKeyword(), "title", "name", "author"));
+
+
+            /**
+             *  模糊查询
+             *  模糊，是指查询关键字与目标关键字可以模糊匹配。
+             *  1.左右模糊查询，其中fuzziness的参数作用是在查询时，es动态的将查询关键词前后增加或者删除一个词，然后进行匹配
+             */
+//            bool.must(QueryBuilders.fuzzyQuery("title", term.getKeyword()).fuzziness(Fuzziness.AUTO));
+
+
+            /**
+             * 2.前缀查询；
+             */
+//            bool.must(QueryBuilders.prefixQuery("title", term.getKeyword()));
+
+
+            /**
+             *  3.通配符查询，支持*和?，?表示单个字符；注意不建议将通配符作为前缀，否则导致查询很慢.
+             */
+//            bool.must(QueryBuilders.wildcardQuery("title", term.getKeyword() + "*"));
+//            bool.must(QueryBuilders.wildcardQuery("title", "道?经"));
+
+
         }
 
         if (StringUtils.isNotBlank(term.getName())) {
             /**
-             * wildcardQuery 这里需要自己传规则 *
+             * 精确匹配
              */
-            bool.must(QueryBuilders.matchQuery("name", "*".concat(term.getName()) + "*"));
+            bool.must(QueryBuilders.termQuery("name", term.getName()));
         }
 
         if (StringUtils.isNotBlank(term.getAuthor())) {
-            bool.must(QueryBuilders.termQuery("author", term.getAuthor()));
+//            bool.must(QueryBuilders.termQuery("author", term.getAuthor()));
+            bool.must(QueryBuilders.termQuery("author.keyword", term.getAuthor()));
         }
         if (!CollectionUtils.isEmpty(term.getCodes())) {
             bool.must(QueryBuilders.termsQuery("code", term.getCodes()));
@@ -93,9 +133,15 @@ public class BookServiceImpl implements BookService {
             bool.must(QueryBuilders.rangeQuery("createTime").to(term.getEndTime()));
         }
 
+        if (term.getStartPrice() != null && term.getEndPrice() != null) {
+            bool.must(QueryBuilders.rangeQuery("price").from(term.getStartPrice()).to(term.getEndPrice()));
+        }
+
 
         /**
          * 构建一个NativeSearchQueryBuilder对象
+         * NativeSearchQuery是当您有复杂查询或无法使用CriteriaAPI 表达的查询时使用的类，例如在构建查询和使用聚合时。
+         * 它允许使用QueryBuilderElasticsearch 库中的所有不同实现，因此命名为“native”。
          */
         NativeSearchQueryBuilder queryBuilder = new NativeSearchQueryBuilder();
 
@@ -131,14 +177,14 @@ public class BookServiceImpl implements BookService {
              *
              * 2.表达式
              */
-            criteria.and(new Criteria("keyword").startsWith(term.getKeyword()));
-//            criteria.and(new Criteria("keyword").endsWith(term.getKeyword()));
-//            criteria.and(new Criteria("keyword").expression("*".concat(term.getKeyword())));
+            criteria.and(new Criteria("title").startsWith(term.getKeyword()));
+//            criteria.and(new Criteria("title").endsWith(term.getKeyword()));
+//            criteria.and(new Criteria("title").expression("*".concat(term.getKeyword())));
 
             /**
              * 有效
              */
-//           criteria.and(new Criteria("keyword").expression("*".concat(term.getKeyword()) + "*"));
+//           criteria.and(new Criteria("title").expression("*".concat(term.getKeyword()) + "*"));
 
         }
 
@@ -172,6 +218,7 @@ public class BookServiceImpl implements BookService {
             query.addSort(Sort.by(Sort.Direction.DESC, "createTime"));
         }
 
+
         final SearchHits<BookIndex> searchHits = elasticsearchOperations.search(query, BookIndex.class);
 
         /**
@@ -184,7 +231,24 @@ public class BookServiceImpl implements BookService {
 
     @Override
     public Page<BookIndex> search3(BookTerm term, Pageable pageable) {
-        return null;
+
+
+        final String source = "{\"bool\":{\"must\": [{ \"match\": { \"name\": { \"query\": \"*" + term.getName() + "\" } } },{\"range\":{\"price\":{\"gte\":189,\"lte\":190}}} ]}} ";
+
+
+        Query query = new StringQuery(source, pageable);
+        if (StringUtils.isBlank(term.getKeyword())) {
+            query.addSort(Sort.by(Sort.Direction.DESC, "createTime"));
+        }
+
+
+        final SearchHits<BookIndex> searchHits = elasticsearchOperations.search(query, BookIndex.class);
+        /**
+         * 返回分页对象
+         */
+        List<BookIndex> contents = searchHits.stream().map(SearchHit::getContent).collect(Collectors.toList());
+        Page<BookIndex> page = new PageImpl<>(contents, pageable, searchHits.getTotalHits());
+        return page;
     }
 
     @Override
@@ -195,6 +259,12 @@ public class BookServiceImpl implements BookService {
     @Override
     public boolean deleteById(String id) {
         indexRepository.deleteById(id);
+        return true;
+    }
+
+    @Override
+    public boolean removeAll() {
+        indexRepository.deleteAll();
         return true;
     }
 }

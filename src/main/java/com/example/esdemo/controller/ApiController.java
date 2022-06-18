@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import sun.reflect.Reflection;
 
 import java.util.Date;
 import java.util.UUID;
@@ -32,9 +31,9 @@ public class ApiController {
         int rank = counter.incrementAndGet();
 
         index.setName("道德经" + rank);
-        index.setAuthor("老子");
+        index.setAuthor("李耳");
         index.setCode("daodejing" + rank);
-        index.setKeyword("道德、老子" + rank);
+        index.setTitle("道德经老子道家学派创始人" + rank);
         index.setCreateTime(new Date());
         index.setDate(new Date());
         index.setEmail("laozi@chunqiu.com");
@@ -53,7 +52,7 @@ public class ApiController {
         index.setName("庄子" + rank);
         index.setAuthor("庄周");
         index.setCode("zhuangzi" + rank);
-        index.setKeyword("逍遥游、齐物论、养生主" + rank);
+        index.setTitle("逍遥游、齐物论、养生主" + rank);
         index.setCreateTime(new Date());
         index.setDate(new Date());
         index.setEmail("zhuangzi@zhanguo.com");
@@ -72,6 +71,11 @@ public class ApiController {
     @GetMapping("/delete/{id}")
     public boolean deleteById(@PathVariable String id) {
         return bookService.deleteById(id);
+    }
+
+    @GetMapping("/removeAll")
+    public boolean removeAll() {
+        return bookService.removeAll();
     }
 
 
