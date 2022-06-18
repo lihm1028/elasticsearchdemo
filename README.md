@@ -8,3 +8,5 @@ elasticsearch 版本 7.17
 Spring Data Elasticsearch 查询 提供了三种实现 
 CriteriaQuery、StringQuery和NativeSearchQuery。
 
+
+我是v1.0修改的
